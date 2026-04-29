@@ -87,7 +87,7 @@ async function deleteDevice() {
     <div class="card-meta">
       <div class="meta-row">
         <span class="meta-label">Сервер</span>
-        <span>{{ device.server.name }} <span class="tag">{{ device.server.tag }}</span></span>
+        <span>{{ device.server.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim() }} <span class="tag">{{ device.server.tag }}</span></span>
       </div>
       <div class="meta-row">
         <span class="meta-label">Стоимость</span>

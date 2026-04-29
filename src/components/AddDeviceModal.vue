@@ -56,7 +56,7 @@ async function submit() {
               :value="s.id"
               :disabled="!s.has_available_ips"
             >
-              {{ s.name }}{{ !s.has_available_ips ? ' (нет мест)' : '' }}
+              {{ s.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim() }}{{ !s.has_available_ips ? ' (нет мест)' : '' }}
             </option>
           </select>
         </label>
