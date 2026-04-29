@@ -1,0 +1,9 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cybernexvpn-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4200:4200"
