@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import api from '../api/index.js'
+import api, { extractErrorMessage } from '../api/index.js'
 import ConnectModal from './ConnectModal.vue'
 import EditDeviceModal from './EditDeviceModal.vue'
 
@@ -36,8 +36,8 @@ async function toggleAutoRenew() {
       { auto_renew: !props.device.auto_renew }
     )
     emit('updated', data)
-  } catch {
-    error.value = 'Не удалось изменить настройку'
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Не удалось изменить настройку')
   } finally {
     loading.value = false
   }
@@ -52,7 +52,7 @@ async function reactivate() {
     )
     emit('updated', data)
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Не удалось возобновить. Проверьте баланс.'
+    error.value = extractErrorMessage(e, 'Не удалось возобновить подписку')
   } finally {
     loading.value = false
   }
@@ -65,8 +65,8 @@ async function deleteDevice() {
   try {
     await api.delete(`/admin/users/${props.userId}/clients/${props.device.id}/`)
     emit('deleted', props.device.id)
-  } catch {
-    error.value = 'Не удалось удалить'
+  } catch (e) {
+    error.value = extractErrorMessage(e, 'Не удалось удалить устройство')
     loading.value = false
   }
 }
@@ -80,7 +80,7 @@ async function deleteDevice() {
         <span class="device-type">{{ CLIENT_TYPE_LABELS[device.type] ?? 'Устройство' }}</span>
       </div>
       <span class="status-badge" :class="device.is_active ? 'active' : 'stopped'">
-        {{ device.is_active ? 'Активно' : 'Остановлено' }}
+        {{ device.is_active ? 'Активно' : 'Неактивно' }}
       </span>
     </div>
 

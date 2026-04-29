@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import api from '../api/index.js'
+import api, { extractErrorMessage } from '../api/index.js'
 
 const props = defineProps({
   device: { type: Object, required: true },
@@ -32,7 +32,7 @@ async function submit() {
     emit('updated', data)
     emit('close')
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Не удалось сохранить изменения'
+    error.value = extractErrorMessage(e, 'Не удалось сохранить изменения')
   } finally {
     loading.value = false
   }

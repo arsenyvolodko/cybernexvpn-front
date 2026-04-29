@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import api from '../api/index.js'
+import api, { extractErrorMessage } from '../api/index.js'
 
 const props = defineProps({
   servers: { type: Array, required: true },
@@ -31,7 +31,7 @@ async function submit() {
     const { data } = await api.post(`/admin/users/${props.userId}/clients/`, payload)
     emit('created', data)
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Не удалось добавить. Проверьте баланс.'
+    error.value = extractErrorMessage(e, 'Не удалось добавить устройство')
   } finally {
     loading.value = false
   }

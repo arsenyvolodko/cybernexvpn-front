@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import api from '../api/index.js'
+import api, { extractErrorMessage } from '../api/index.js'
 import DeviceCard from '../components/DeviceCard.vue'
 import AddDeviceModal from '../components/AddDeviceModal.vue'
 import TopUpModal from '../components/TopUpModal.vue'
@@ -19,18 +19,25 @@ const showAddDevice = ref(false)
 const showTopUp = ref(false)
 
 onMounted(async () => {
-  // Если в URL есть ?token=xxx — сохраняем и убираем из адресной строки
-  const urlToken = route.query.token
-  if (urlToken) {
-    localStorage.setItem('api_token', urlToken)
-    router.replace({ path: '/profile' })
-  }
+  // Токен держим одновременно в URL (path) и в localStorage. URL — основной канал,
+  // потому что переезжает между браузерами при копировании ссылки (например, при
+  // «Открыть в Safari» из встроенного браузера Telegram). localStorage — запасной кеш.
+  const pathToken = route.params.token ? String(route.params.token) : null
+  const queryToken = route.query.token ? String(route.query.token) : null
+  const storedToken = localStorage.getItem('api_token')
+  const token = pathToken || queryToken || storedToken
 
-  const token = localStorage.getItem('api_token')
   if (!token) {
     error.value = 'Токен не найден. Перейдите по ссылке из Telegram-бота.'
     loading.value = false
     return
+  }
+
+  localStorage.setItem('api_token', token)
+
+  // Унифицируем URL: если токен пришёл не в path, переписываем адрес в новый формат /<token>
+  if (!pathToken) {
+    router.replace({ name: 'profile', params: { token } })
   }
 
   await loadAll()
@@ -53,7 +60,7 @@ async function loadAll() {
     if (e.response?.status === 401 || e.response?.status === 403) {
       error.value = 'Токен недействителен. Перейдите по новой ссылке из бота.'
     } else {
-      error.value = 'Не удалось загрузить данные. Попробуйте позже.'
+      error.value = extractErrorMessage(e, 'Не удалось загрузить данные. Попробуйте позже.')
     }
   } finally {
     loading.value = false
@@ -82,6 +89,18 @@ const activeDevices = computed(() => devices.value.filter(d => d.is_active))
 const inactiveDevices = computed(() => devices.value.filter(d => !d.is_active))
 const availableServers = computed(() => servers.value.filter(s => s.has_available_ips))
 
+// Имя в шапке: приоритет first_name → username → пусто (тогда показываем только иконку TG)
+const displayName = computed(() => {
+  const fn = user.value?.first_name?.trim()
+  if (fn) return fn
+  const un = user.value?.username?.trim()
+  if (un) return un
+  return ''
+})
+
+// Ссылка на бота — берём из переменной окружения, без неё чип не кликабелен
+const tgBotUrl = import.meta.env.VITE_TG_BOT_URL || ''
+
 // Сумма подписок в месяц — для инфоблока рядом с балансом
 const monthlyCost = computed(() =>
   activeDevices.value.reduce((sum, d) => sum + (d.price ?? 0), 0)
@@ -108,16 +127,23 @@ const monthlyCost = computed(() =>
         <div class="blob blob-2" />
       </div>
 
-      <!-- Шапка: только бренд и юзернейм -->
+      <!-- Шапка: логотип-ссылка на бота слева, юзернейм справа -->
       <header class="profile-header">
         <div class="container header-inner">
-          <div class="brand">
+          <component
+            :is="tgBotUrl ? 'a' : 'div'"
+            class="brand"
+            :class="{ 'brand-link': !!tgBotUrl }"
+            :href="tgBotUrl || undefined"
+            :target="tgBotUrl ? '_blank' : undefined"
+            :rel="tgBotUrl ? 'noopener noreferrer' : undefined"
+            :title="tgBotUrl ? 'Открыть бота в Telegram' : undefined"
+          >
             <img src="/logo.png" alt="CyberNex VPN" class="brand-logo" />
             <span class="brand-text">cybernexvpn</span>
-          </div>
-          <div class="user-chip">
-            <span class="user-dot" />
-            <span class="username">{{ user.username ?? 'Пользователь' }}</span>
+          </component>
+          <div v-if="displayName" class="user-chip">
+            <span class="username">{{ displayName }}</span>
           </div>
         </div>
       </header>
@@ -177,7 +203,7 @@ const monthlyCost = computed(() =>
 
         <!-- Неактивные устройства -->
         <section v-if="inactiveDevices.length > 0">
-          <h2 class="section-title-muted">Остановленные</h2>
+          <h2 class="section-title-muted">Неактивные</h2>
           <div class="devices-grid">
             <DeviceCard
               v-for="device in inactiveDevices"
@@ -241,7 +267,6 @@ const monthlyCost = computed(() =>
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-x: hidden;
 }
 
 /* Декоративные «пятна» на фоне — неяркие, для живости */
@@ -291,27 +316,30 @@ const monthlyCost = computed(() =>
   position: relative;
   z-index: 1;
 }
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand-logo { width: 32px; height: 32px; }
-.brand-text { font-weight: 700; font-size: 1rem; color: var(--text); letter-spacing: -0.01em; }
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+.brand-link { cursor: pointer; transition: opacity 0.15s; }
+.brand-link:hover { opacity: 0.75; }
+.brand-link:active { opacity: 0.6; }
+.brand-logo { width: 48px; height: 48px; }
+.brand-text { font-weight: 700; font-size: 1.15rem; color: var(--text); letter-spacing: -0.01em; }
 
 .user-chip {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text);
-}
-.user-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #5cb67c;
-  box-shadow: 0 0 0 3px rgba(92, 182, 124, 0.18);
+  line-height: 1;
 }
 .username { font-weight: 500; }
 

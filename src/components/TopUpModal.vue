@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import api from '../api/index.js'
+import api, { extractErrorMessage } from '../api/index.js'
 
 const props = defineProps({
   userId: { type: Number, required: true },
@@ -33,7 +33,7 @@ async function submit() {
     })
     window.location.href = data.url
   } catch (e) {
-    error.value = e.response?.data?.detail || 'Не удалось создать платёж'
+    error.value = extractErrorMessage(e, 'Не удалось создать платёж')
     loading.value = false
   }
 }
