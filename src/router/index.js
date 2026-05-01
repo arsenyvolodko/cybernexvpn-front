@@ -5,12 +5,15 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: () => {
-        // Если уже есть закешированный токен — сразу открываем профиль с ним в URL.
+      name: 'home',
+      // Если уже есть закешированный токен — сразу уводим в личный кабинет,
+      // иначе показываем публичный лендинг.
+      beforeEnter: () => {
         let token = null
         try { token = localStorage.getItem('api_token') } catch { /* ignore */ }
-        return token ? `/${token}` : { name: 'profile-no-token' }
+        return token ? `/${token}` : true
       },
+      component: () => import('../views/HomeView.vue'),
     },
     {
       // Обратная совместимость: старые ссылки вида /profile?token=<uuid>.
