@@ -6,13 +6,6 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      // Если уже есть закешированный токен — сразу уводим в личный кабинет,
-      // иначе показываем публичный лендинг.
-      beforeEnter: () => {
-        let token = null
-        try { token = localStorage.getItem('api_token') } catch { /* ignore */ }
-        return token ? `/${token}` : true
-      },
       component: () => import('../views/HomeView.vue'),
     },
     {

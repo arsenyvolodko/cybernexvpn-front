@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import api, { extractErrorMessage } from '../api/index.js'
 import DeviceCard from '../components/DeviceCard.vue'
 import AddDeviceModal from '../components/AddDeviceModal.vue'
@@ -142,8 +142,13 @@ const monthlyCost = computed(() =>
             <img src="/logo.png" alt="CyberNex VPN" class="brand-logo" />
             <span class="brand-text">cybernexvpn</span>
           </component>
-          <div v-if="displayName" class="user-chip">
-            <span class="username">{{ displayName }}</span>
+          <div class="header-right">
+            <RouterLink to="/" class="home-link" title="На главную страницу">
+              ← На главную
+            </RouterLink>
+            <div v-if="displayName" class="user-chip">
+              <span class="username">{{ displayName }}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -328,6 +333,24 @@ const monthlyCost = computed(() =>
 .brand-link:active { opacity: 0.6; }
 .brand-logo { width: 48px; height: 48px; }
 .brand-text { font-weight: 700; font-size: 1.15rem; color: var(--text); letter-spacing: -0.01em; }
+
+.header-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.home-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.92rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.home-link:hover {
+  color: var(--text);
+  background: var(--surface);
+}
 
 .user-chip {
   display: inline-flex;
@@ -539,6 +562,8 @@ const monthlyCost = computed(() =>
 @media (max-width: 640px) {
   .header-inner { gap: 10px; }
   .brand-text { display: none; }
+  .header-right { gap: 6px; }
+  .home-link { padding: 6px 8px; font-size: 0.85rem; }
   .devices-grid { grid-template-columns: 1fr; }
   .balance-card {
     flex-direction: column;

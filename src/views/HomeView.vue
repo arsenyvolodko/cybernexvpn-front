@@ -4,6 +4,12 @@
 // остаётся видимой, чтобы вёрстка не «прыгала» на разных окружениях.
 const tgBotUrl = import.meta.env.VITE_TG_BOT_URL || ''
 
+// Если в localStorage уже есть api_token — значит, у пользователя уже есть кабинет.
+// Показываем кнопку «Личный кабинет», ведущую на /<token>.
+let cachedToken = ''
+try { cachedToken = localStorage.getItem('api_token') || '' } catch { /* ignore */ }
+const cabinetUrl = cachedToken ? `/${cachedToken}` : ''
+
 const features = [
   {
     icon: '⚡',
@@ -63,7 +69,14 @@ const steps = [
           <a href="#features" class="nav-link">Возможности</a>
           <a href="#how" class="nav-link">Как это работает</a>
           <a
-            v-if="tgBotUrl"
+            v-if="cabinetUrl"
+            :href="cabinetUrl"
+            class="nav-cta nav-cta-primary"
+          >
+            Личный кабинет →
+          </a>
+          <a
+            v-else-if="tgBotUrl"
             :href="tgBotUrl"
             target="_blank"
             rel="noopener noreferrer"
@@ -95,6 +108,14 @@ const steps = [
               class="cta-primary"
             >
               Попробовать
+              <span class="cta-arrow" aria-hidden="true">→</span>
+            </a>
+            <a
+              v-if="cabinetUrl"
+              :href="cabinetUrl"
+              class="cta-secondary"
+            >
+              Перейти в личный кабинет
               <span class="cta-arrow" aria-hidden="true">→</span>
             </a>
           </div>
@@ -291,6 +312,16 @@ const steps = [
   border-color: var(--accent-strong);
   color: var(--accent-strong);
 }
+.nav-cta-primary {
+  background: var(--accent-strong);
+  color: var(--accent-contrast);
+  border-color: var(--accent-strong);
+}
+.nav-cta-primary:hover {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--accent-contrast);
+}
 
 /* Hero */
 .hero {
@@ -380,17 +411,6 @@ const steps = [
 .cta-secondary:hover {
   border-color: var(--accent-strong);
   color: var(--accent-strong);
-}
-.tg-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--accent-strong);
-  color: #fff;
-  font-size: 0.7rem;
-  transform: translateY(-1px);
 }
 .hero-note {
   color: var(--muted);
