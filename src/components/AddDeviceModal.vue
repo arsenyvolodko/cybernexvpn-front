@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import api, { extractErrorMessage } from '../api/index.js'
 
 const props = defineProps({
@@ -13,6 +13,10 @@ const name = ref('')
 const type = ref('android')
 const loading = ref(false)
 const error = ref(null)
+
+const selectedServer = computed(() =>
+  props.servers.find(s => s.id === selectedServerId.value) || null
+)
 
 const TYPES = [
   { value: 'android', label: 'Android' },
@@ -56,7 +60,7 @@ async function submit() {
               :value="s.id"
               :disabled="!s.has_available_ips"
             >
-              {{ s.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim() }}{{ !s.has_available_ips ? ' (нет мест)' : '' }}
+              {{ s.name.replace(/\s*\([^)]*\)\s*/g, ' ').trim() }} — {{ s.price }} ₽/мес{{ !s.has_available_ips ? ' (нет мест)' : '' }}
             </option>
           </select>
         </label>
@@ -129,6 +133,13 @@ async function submit() {
 .form { display: flex; flex-direction: column; gap: 14px; }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field-label { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-top: 2px;
+}
+.field-hint strong { font-weight: 600; color: var(--accent-strong); }
+.field-hint .hint-muted { color: var(--muted); font-weight: 400; }
 .required { color: #c0392b; }
 
 select, input[type="text"] {
